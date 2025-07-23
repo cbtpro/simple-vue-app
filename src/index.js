@@ -8,13 +8,13 @@ createApp({
   },
   methods: {
     sayHello() {
-      alert(this.message);
+      console.log(this.message);
     }
   },
   mounted() {
-    alert('组件挂载');
+    console.log('组件挂载');
   },
   unmounted() {
-    alert('组件卸载');
+    console.log('组件卸载');
   },
 }).mount('#app');

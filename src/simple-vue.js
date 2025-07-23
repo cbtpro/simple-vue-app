@@ -29,13 +29,12 @@ export function createApp(options) {
           }
         });
       });
-
       // 构建上下文
-      const ctx = {
-        ...options.methods,
-        ...reactiveData,
-      };
-
+      const ctx = Object.create(reactiveData);
+      // 将 methods 添加到 ctx，并绑定 this 为 ctx
+      for (const key in options.methods) {
+        ctx[key] = options.methods[key].bind(ctx);
+      }
       function compile(node) {
         if (node.nodeType === Node.ELEMENT_NODE) {
           // v-model

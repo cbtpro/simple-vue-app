@@ -91,11 +91,11 @@ export function createApp(options) {
   },
   methods: {
     sayHello() {
-      alert(this.message);
+      console.log(this.message);
     }
   },
   mounted() {
-    alert('组件挂载');
+    console.log('组件挂载');
     window.setTimeout(() => {
       this.message = '你好，世界！！！';
     }, 2000)
@@ -104,7 +104,7 @@ export function createApp(options) {
     });
   },
   unmounted() {
-    alert('组件卸载');
+    console.log('组件卸载');
   },
 }
 ```
@@ -122,11 +122,11 @@ createApp({
   },
   methods: {
     sayHello() {
-      alert(this.message);
+      console.log(this.message);
     }
   },
   mounted() {
-    alert('组件挂载');
+    console.log('组件挂载');
     window.setTimeout(() => {
       this.message = '你好，世界！！！';
     }, 2000)
@@ -135,7 +135,7 @@ createApp({
     });
   },
   unmounted() {
-    alert('组件卸载');
+    console.log('组件卸载');
   },
 }).mount('#app');
 
@@ -199,11 +199,14 @@ if (!el) {
 
 // 获得状态data
 const data = options.data();
+
 // 创建vue实例/上下文，后面的一切都要在ctx上得到具体的应用
-const ctx = {
-  ...options.methods,
-  ...data,
-};
+// 构建上下文
+const ctx = Object.create(reactiveData);
+// 将 methods 添加到 ctx，并绑定 this 为 ctx
+for (const key in options.methods) {
+  ctx[key] = options.methods[key].bind(ctx);
+}
 
 Object.defineProperty(reactiveData, key, {
   get() {
@@ -521,10 +524,12 @@ export function createApp(options) {
       });
 
       // 构建上下文
-      const ctx = {
-        ...options.methods,
-        ...reactiveData,
-      };
+      const ctx = Object.create(reactiveData);
+      // 将 methods 添加到 ctx，并绑定 this 为 ctx
+      for (const key in options.methods) {
+        ctx[key] = options.methods[key].bind(ctx);
+      }
+
 
       function compile(node) {
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -574,10 +579,12 @@ export function createApp(options) {
       // 省略使用 Object.defineProperty 创建响应式
 
       // 构建上下文
-      const ctx = {
-        ...options.methods,
-        ...reactiveData,
-      };
+      const ctx = Object.create(reactiveData);
+      // 将 methods 添加到 ctx，并绑定 this 为 ctx
+      for (const key in options.methods) {
+        ctx[key] = options.methods[key].bind(ctx);
+      }
+
 
       function compile(node) {
         if (node.nodeType === Node.ELEMENT_NODE) {
