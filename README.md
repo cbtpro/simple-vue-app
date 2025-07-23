@@ -2,6 +2,7 @@
 
 vue1(2014年)发展到今天已经有11年了，但估计也有很多人也才刚刚开始学习vue3，今天就手把手来学习实现一个简易的vue，目的是来了解vue的底层原理，掰开了揉碎了，方便用户能更快的入手vue，能更快的和和vue达到人码合一的境界。
 
+代码全部托管在[simple-vue-app](https://github.com/cbtpro/simple-vue-app)
 ## 搭建脚手架
 
 把时间拉回到2014年，使用webpack搭建脚手架。
@@ -59,6 +60,8 @@ module.exports = {
 </html>
 ```
 
+## 程序入口
+
 新建`src/index.js`作为程序入口
 
 新建`src/simple-vue.js`作为vue的实现
@@ -72,6 +75,8 @@ export function createApp(options) {
   }
 }
 ```
+
+## vue组件的定义（约定）
 
 这里的options是vue组件的定义，记住它并理解它，它是vue2的基础，是进阶vue3的基石。
 
@@ -104,7 +109,7 @@ export function createApp(options) {
 }
 ```
 
-接下来我们将到处的createApp导出在放在`src/index.js`中使用，并传入上面的组件定义。
+接下来我们将导出的`createApp`导出在放在`src/index.js`中使用，并传入上面的组件定义。
 
 ```js
 import { createApp } from './simple-vue';
@@ -139,6 +144,8 @@ createApp({
 
 这里的`mount('#app')`是往`index.html`的`<div id="app"></div>`上去挂载。
 
+## 启动命令
+
 这时候可以使用`npx webpack serve`来启动项目，观察页面可以看到展示了页面原始的样子。
 
 可以将命令维护到`package.json`中，下次使用`npm run dev`就可以运行了。
@@ -166,6 +173,8 @@ createApp({
 }
 
 ```
+
+## 拆分功能
 
 下面我们的任务分别是
 
@@ -236,7 +245,9 @@ Object.assign(ctx, proxy);
   compile(el);
 ```
 
-complie方法骚味有点复杂，我们单独拿出来写，我们要对index.html里的`<div id="app"></div>`里的元素进行解析，将data.message的数据绑定到input中，还要在p中显示data.message的数据。vue中使用的是AST抽象语法数（abstract syntax tree）,将html解析成可以方便编程的json结构。
+## 原理讲解
+
+complie方法稍微有点复杂，我们单独拿出来写，我们要对`index.html`里的`<div id="app"></div>`里的元素进行解析，将data.message的数据绑定到input中，还要在p中显示data.message的数据。vue中使用的是`AST抽象语法数（abstract syntax tree）`,将html解析成可以方便编程的js数据结构，关于js数据结构，推荐阅读[《学习JavaScript数据结构与算法》](https://www.ituring.com.cn/book/1613)这本书。
 
 源码1
 ```html
@@ -282,7 +293,7 @@ AST1
 ```
 
 AST2
-```
+```js
 {
   tag: 'div',
   children: [
@@ -307,15 +318,15 @@ AST2
 }
 
 ```
-大致是这样的，更细致一点会把@click解析成更方便的结构
+编译过程和结果大致是这样的，更细致一点会把@click解析成下面这种更方便的结构
 
-```
+```js
 {
   event: 'click',
   fn: 'sayHello',
 }
 ```
-社区有很多开源的解析器，但vue是自己开发的解析@vue/compiler-dom、@vue/compiler-core。
+社区有很多开源的解析器，但vue是自己开发的解析`@vue/compiler-dom`、`@vue/compiler-core`，感兴趣可以去npm和vue官方源码的packages中阅读。
 
 vue会先使用@vue/compiler-dom解析成下面的结构
 
@@ -346,7 +357,9 @@ function render(ctx) {
 
 ```
 
-原理说到这里，但今天不打算走AST这条路，就简单使用原生的js来实现，通过判断dom是否包含属性`v-model`,将v-model绑定的key`message`获取到。因为reactiveData.message是响应式的，赋值set和获取值get都能触发对应的set、get事件。那可以将有v-model="状态值的字面量"的组件绑定到reactiveData['状态值的字面量']的get事件，将文本框的input事件绑定到reactiveData['状态值的字面量']的set事件。
+原理说到这里，但今天不打算走AST这条路，就简单使用原生的js来实现，通过判断dom是否包含属性`v-model`,将`v-model`绑定的key`message`获取到。
+
+因为`reactiveData.message`是响应式的，赋值set和获取值get都能触发对应的set、get事件。那可以将有v-model="状态值的字面量"的组件绑定到`reactiveData['状态值的字面量']`的get事件，将文本框的input事件绑定到`reactiveData['状态值的字面量']`的set事件。
 
 
 ```
@@ -368,7 +381,7 @@ if (node.hasAttribute('v-model')) {
   });
 }
 ```
-
+## 处理绑定事件
 接下来处理解析click点击事件，vue在处理点击事件时依然是使用的它的核心两大解析器，这里就先不用了，简单判断属性名称是以`@`字符开头的，不管事件名称是啥字符串，一股脑的给元素绑定事件。
 还记得我们在组件结果里定义的methods了吗？我们讲他绑定到ctx上了，`@事件名称`中取到事件名称，然后将有了`addEventListener`的两大重要参数eventName和fn。直接绑定上去即可。这里不对事件名称做校验，合不合法不管。
 
@@ -383,6 +396,8 @@ if (node.hasAttribute('v-model')) {
   }
 });
 ```
+
+## 处理模板语法
 
 接下来还需要将响应更改的值渲染到模板语法`{{ message }}`中，还要将更新事件放到bindings中，我们称之为绑定，和reactiveData一样，使用key来绑定。
 
@@ -411,6 +426,8 @@ if (matches.length) {
 ```
 
 整个逻辑逻辑理完了，接下来整合在一起。
+
+## 整合逻辑
 
 回到我们的createApp函数中，我们要在mount中将代码的主要逻辑搭建出来。
 
@@ -616,7 +633,7 @@ export function createApp(options) {
 }
 ```
 
-留几个思考题：
+## 留几个思考题
 
 - 为什么data要定义成函数（import、export的特性）
 - 如何更改成Proxy实现双向绑定
